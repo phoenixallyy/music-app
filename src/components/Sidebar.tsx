@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Playlist } from '../types';
-import { Home, Compass, Library, Plus, Heart, Users, Settings, Music, Disc3, ShieldCheck } from 'lucide-react';
+import { Home, Compass, Library, Plus, Heart, Users, Settings, Music, Disc3, ShieldCheck, LayoutDashboard, Upload } from 'lucide-react';
 
 interface SidebarProps {
   currentTab: string;
@@ -80,11 +80,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="px-3 pb-2 flex items-center justify-between text-[11px] font-semibold text-purple-400/80 uppercase tracking-wider">
             <span className="flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5" />
-              Vault Controls
+              Owner Controls
             </span>
           </div>
 
           <div className="space-y-1">
+            <button
+              onClick={() => onNavigate('dashboard')}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                currentTab === 'dashboard'
+                  ? 'bg-purple-600/15 text-purple-300 font-semibold border border-purple-500/20'
+                  : 'text-slate-400 hover:text-slate-100 hover:bg-white/[0.04]'
+              }`}
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              <span>Owner Dashboard</span>
+            </button>
+
             <button
               onClick={() => onNavigate('library')}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
@@ -93,8 +105,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   : 'text-slate-400 hover:text-slate-100 hover:bg-white/[0.04]'
               }`}
             >
-              <Library className="w-4 h-4" />
-              <span>Music Library</span>
+              <Music className="w-4 h-4" />
+              <span>My Music</span>
+            </button>
+
+            <button
+              onClick={() => onNavigate('upload-songs')}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                currentTab === 'upload-songs'
+                  ? 'bg-purple-600/15 text-purple-300 font-semibold border border-purple-500/20'
+                  : 'text-purple-400 hover:text-purple-300 hover:bg-white/[0.04]'
+              }`}
+            >
+              <Upload className="w-4 h-4" />
+              <span>Upload Songs</span>
             </button>
 
             <button

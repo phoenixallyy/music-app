@@ -16,6 +16,10 @@ async function startServer() {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+  // Serve uploaded artwork files
+  const artworkDir = path.resolve(process.cwd(), 'data', 'artwork');
+  app.use('/data/artwork', express.static(artworkDir));
+
   // Mount API endpoints
   app.use('/api', apiRouter);
 

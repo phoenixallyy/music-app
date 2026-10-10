@@ -1,0 +1,120 @@
+{
+  "users": [
+    {
+      "id": "usr_owner_main",
+      "email": "owner@vibevault.io",
+      "passwordHash": "716cda4d5e96a329be8a37956935bfed1081c5a650fc1b41d8025fdd74c2e340",
+      "displayName": "VibeVault Owner",
+      "role": "owner",
+      "avatarUrl": "",
+      "createdAt": "2026-10-10T11:49:41.249Z"
+    }
+  ],
+  "songs": [
+    {
+      "id": "sng_obsidian_echoes",
+      "title": "Obsidian Echoes",
+      "artist": "Auraform",
+      "album": "Midnight Frequencies",
+      "genre": "Ambient Downtempo",
+      "duration": 24,
+      "audioFileName": "obsidian_echoes.wav",
+      "originalFilename": "obsidian_echoes.wav",
+      "fileSize": 2116844,
+      "mimeType": "audio/wav",
+      "artworkUrl": "/src/assets/images/art_midnight_echoes_1791621274995.jpg",
+      "uploaderId": "usr_owner_main",
+      "createdAt": "2026-10-07T11:49:41.249Z"
+    },
+    {
+      "id": "sng_neon_horizon",
+      "title": "Neon Horizon",
+      "artist": "Kroma Drive",
+      "album": "Analog Dreams",
+      "genre": "Synthwave",
+      "duration": 24,
+      "audioFileName": "neon_horizon.wav",
+      "originalFilename": "neon_horizon.wav",
+      "fileSize": 2116844,
+      "mimeType": "audio/wav",
+      "artworkUrl": "/src/assets/images/art_neon_horizon_1791621288838.jpg",
+      "uploaderId": "usr_owner_main",
+      "createdAt": "2026-10-08T11:49:41.249Z"
+    },
+    {
+      "id": "sng_midnight_reverie",
+      "title": "Midnight Reverie",
+      "artist": "Sol & Luna",
+      "album": "Resonance Sessions",
+      "genre": "Lo-Fi Chill",
+      "duration": 24,
+      "audioFileName": "midnight_reverie.wav",
+      "originalFilename": "midnight_reverie.wav",
+      "fileSize": 2116844,
+      "mimeType": "audio/wav",
+      "artworkUrl": "/src/assets/images/art_curated_vibes_1791621255690.jpg",
+      "uploaderId": "usr_owner_main",
+      "createdAt": "2026-10-09T11:49:41.249Z"
+    }
+  ],
+  "playlists": [
+    {
+      "id": "pl_1791642789884_3ndo",
+      "ownerId": "usr_owner_main",
+      "name": "Hindi Soft",
+      "description": "",
+      "artworkUrl": "/src/assets/images/art_curated_vibes_1791621255690.jpg",
+      "isPublicToFriends": true,
+      "sharedWithUserIds": [],
+      "trackIds": [],
+      "createdAt": "2026-10-10T14:33:09.884Z",
+      "updatedAt": "2026-10-10T14:45:06.165Z"
+    },
+    {
+      "id": "pl_late_night_focus",
+      "ownerId": "usr_owner_main",
+      "name": "Late Night Focus",
+      "description": "Immersive soundscapes and sonic depth for flow state listening.",
+      "artworkUrl": "/src/assets/images/art_curated_vibes_1791621255690.jpg",
+      "isPublicToFriends": true,
+      "sharedWithUserIds": [],
+      "trackIds": [
+        "sng_obsidian_echoes",
+        "sng_neon_horizon",
+        "sng_midnight_reverie"
+      ],
+      "createdAt": "2026-10-08T11:49:41.249Z",
+      "updatedAt": "2026-10-10T09:49:41.249Z"
+    },
+    {
+      "id": "pl_private_vault_gems",
+      "ownerId": "usr_owner_main",
+      "name": "Private Vault Archive",
+      "description": "Unreleased sessions and studio master cuts reserved exclusively for owner ears.",
+      "artworkUrl": "/src/assets/images/art_midnight_echoes_1791621274995.jpg",
+      "isPublicToFriends": false,
+      "sharedWithUserIds": [],
+      "trackIds": [
+        "sng_neon_horizon",
+        "sng_obsidian_echoes"
+      ],
+      "createdAt": "2026-10-09T11:49:41.249Z",
+      "updatedAt": "2026-10-09T23:49:41.249Z"
+    }
+  ],
+  "invitations": [],
+  "favorites": [],
+  "listeningHistory": [
+    {
+      "id": "hist_1791634351577_sq7m",
+      "userId": "usr_owner_main",
+      "songId": "sng_obsidian_echoes",
+      "playedAt": "2026-10-10T12:12:31.577Z"
+    }
+  ],
+  "settings": {
+    "systemName": "VibeVault",
+    "ownerEmail": "owner@vibevault.io",
+    "version": "1.0.0"
+  }
+}

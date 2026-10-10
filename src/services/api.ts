@@ -138,6 +138,20 @@ export const api = {
     });
   },
 
+  async uploadMultipleSongs(formData: FormData) {
+    return request<{ message: string; songs: Song[] }>('/songs/upload-multiple', {
+      method: 'POST',
+      body: formData,
+    });
+  },
+
+  async uploadArtwork(formData: FormData) {
+    return request<{ message: string; artworkUrl: string; filename: string }>('/artwork/upload', {
+      method: 'POST',
+      body: formData,
+    });
+  },
+
   async updateSong(id: string, data: Partial<Song>) {
     return request<{ message: string; song: Song }>(`/songs/${id}`, {
       method: 'PUT',

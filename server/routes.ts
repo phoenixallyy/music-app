@@ -41,6 +41,34 @@ const upload = multer({
   }
 });
 
+// Multer storage for cover artwork images
+const artworkStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, ARTWORK_DIR);
+  },
+  filename: (_req, file, cb) => {
+    const uniqueSuffix = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+    cb(null, `cover_${uniqueSuffix}${ext}`);
+  }
+});
+
+const uploadArtwork = multer({
+  storage: artworkStorage,
+  limits: {
+    fileSize: 15 * 1024 * 1024 // 15MB max for artwork
+  },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.includes(ext) || file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files (JPG, PNG, WEBP, GIF, SVG) are allowed for cover artwork.'));
+    }
+  }
+});
+
 // Middleware for authentication
 export interface AuthenticatedRequest extends Request {
   user?: TokenPayload;
@@ -377,6 +405,67 @@ router.post('/songs/upload', authenticate, requireOwner, upload.single('audio'),
     message: 'Song uploaded successfully',
     song: newSong
   });
+});
+
+// Upload multiple songs (Owner only)
+router.post('/songs/upload-multiple', authenticate, requireOwner, upload.array('audio', 20), (req: AuthenticatedRequest, res: Response) => {
+  const files = req.files as Express.Multer.File[];
+  if (!files || files.length === 0) {
+    return res.status(400).json({ error: 'No audio files provided.' });
+  }
+
+  const uploadedSongs: Song[] = [];
+  for (const file of files) {
+    const filename = file.filename;
+    const originalName = file.originalname;
+    const parsedTitle = path.parse(originalName).name.replace(/[-_]/g, ' ');
+
+    const newSong: Song = {
+      id: `sng_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      title: parsedTitle,
+      artist: 'Vault Artist',
+      album: 'Vault Singles',
+      genre: 'Electronic',
+      duration: 180,
+      audioFileName: filename,
+      originalFilename: originalName,
+      fileSize: file.size,
+      mimeType: file.mimetype,
+      artworkUrl: '/src/assets/images/art_curated_vibes_1791621255690.jpg',
+      uploaderId: req.user!.userId,
+      createdAt: new Date().toISOString()
+    };
+
+    db.addSong(newSong);
+    uploadedSongs.push(newSong);
+  }
+
+  res.status(201).json({
+    message: `${uploadedSongs.length} song(s) uploaded successfully`,
+    songs: uploadedSongs
+  });
+});
+
+// Upload custom cover artwork (Owner only)
+router.post('/artwork/upload', authenticate, requireOwner, uploadArtwork.single('artwork'), (req: AuthenticatedRequest, res: Response) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No image file provided.' });
+  }
+  const artworkUrl = `/api/artwork/${req.file.filename}`;
+  res.status(201).json({
+    message: 'Cover artwork uploaded successfully',
+    artworkUrl,
+    filename: req.file.filename
+  });
+});
+
+// Retrieve custom cover artwork
+router.get('/artwork/:filename', (req: Request, res: Response) => {
+  const filePath = path.join(ARTWORK_DIR, req.params.filename);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Cover artwork not found.' });
+  }
+  res.sendFile(filePath);
 });
 
 // Update song details (Owner only)
@@ -799,6 +888,20 @@ router.get('/history', authenticate, (req: AuthenticatedRequest, res: Response) 
 router.post('/history/:songId', authenticate, (req: AuthenticatedRequest, res: Response) => {
   db.recordPlay(req.user!.userId, req.params.songId);
   res.json({ success: true });
+});
+
+// Global Multer & Route Error Middleware
+router.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ error: 'File size limit exceeded. Maximum file size allowed is 100MB.' });
+    }
+    return res.status(400).json({ error: `Upload error: ${err.message}` });
+  }
+  if (err instanceof Error) {
+    return res.status(400).json({ error: err.message });
+  }
+  res.status(500).json({ error: 'An unexpected internal error occurred.' });
 });
 
 export default router;

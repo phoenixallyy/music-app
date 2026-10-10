@@ -21,6 +21,7 @@ import { PlaylistPage } from './pages/PlaylistPage';
 import { FriendsPage } from './pages/FriendsPage';
 import { LikedSongsPage } from './pages/LikedSongsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { OwnerDashboard } from './pages/OwnerDashboard';
 import { AuthModal } from './pages/AuthModal';
 import { CheckCircle2, AlertCircle, Info, Sparkles } from 'lucide-react';
 
@@ -66,10 +67,10 @@ const AppContent: React.FC = () => {
     }
   }, []);
 
-  // When user signs in, switch default tab to 'home' safely without flickering
+  // When user signs in, switch default tab to 'dashboard' (if owner) or 'home' (if friend/guest)
   useEffect(() => {
     if (user && currentTab === 'landing') {
-      setCurrentTab('home');
+      setCurrentTab(user.role === 'owner' ? 'dashboard' : 'home');
     } else if (!user && !isAuthLoading && !getStoredToken() && currentTab !== 'landing' && currentTab !== 'explore') {
       setCurrentTab('landing');
     }
@@ -129,7 +130,7 @@ const AppContent: React.FC = () => {
     try {
       const authedUser = await loginQuickOwner();
       await loadContent(authedUser);
-      setCurrentTab('home');
+      setCurrentTab('dashboard');
       showToast('Logged in as Demo Owner! Administrator dashboard unlocked.', 'success');
     } catch (err) {
       console.error('Owner demo error:', err);
@@ -207,7 +208,67 @@ const AppContent: React.FC = () => {
           />
         );
 
+      case 'dashboard':
+        if (!isOwner) {
+          return (
+            <HomePage
+              playlists={playlists}
+              songs={songs}
+              onOpenPlaylist={(id) => handleNavigate('playlist-view', id)}
+              onOpenUpload={() => setIsUploadModalOpen(true)}
+              onOpenCreatePlaylist={() => {
+                setPlaylistToEdit(null);
+                setIsCreatePlaylistOpen(true);
+              }}
+              onNavigateExplore={() => setCurrentTab('explore')}
+            />
+          );
+        }
+        return (
+          <OwnerDashboard
+            initialSection="overview"
+            songs={songs}
+            playlists={playlists}
+            onOpenUploadModal={() => setIsUploadModalOpen(true)}
+            onOpenCreatePlaylist={() => {
+              setPlaylistToEdit(null);
+              setIsCreatePlaylistOpen(true);
+            }}
+            onOpenInviteModal={() => setIsInviteModalOpen(true)}
+            onRefreshData={loadContent}
+            onNavigatePlaylist={(id) => handleNavigate('playlist-view', id)}
+            onAddToPlaylist={handleAddToPlaylist}
+          />
+        );
+
+      case 'upload-songs':
+      case 'upload':
+        if (!isOwner) {
+          return (
+            <div className="p-16 text-center text-xs text-slate-400">
+              Access restricted to Vault Owner.
+            </div>
+          );
+        }
+        return (
+          <OwnerDashboard
+            initialSection="upload"
+            songs={songs}
+            playlists={playlists}
+            onOpenUploadModal={() => setIsUploadModalOpen(true)}
+            onOpenCreatePlaylist={() => {
+              setPlaylistToEdit(null);
+              setIsCreatePlaylistOpen(true);
+            }}
+            onOpenInviteModal={() => setIsInviteModalOpen(true)}
+            onRefreshData={loadContent}
+            onNavigatePlaylist={(id) => handleNavigate('playlist-view', id)}
+            onAddToPlaylist={handleAddToPlaylist}
+          />
+        );
+
       case 'library':
+      case 'my-music':
         if (!isOwner) {
           return (
             <div className="p-16 text-center text-xs text-slate-400">
@@ -216,11 +277,18 @@ const AppContent: React.FC = () => {
           );
         }
         return (
-          <LibraryPage
+          <OwnerDashboard
+            initialSection="music"
             songs={songs}
             playlists={playlists}
-            onOpenUpload={() => setIsUploadModalOpen(true)}
-            onRefresh={loadContent}
+            onOpenUploadModal={() => setIsUploadModalOpen(true)}
+            onOpenCreatePlaylist={() => {
+              setPlaylistToEdit(null);
+              setIsCreatePlaylistOpen(true);
+            }}
+            onOpenInviteModal={() => setIsInviteModalOpen(true)}
+            onRefreshData={loadContent}
+            onNavigatePlaylist={(id) => handleNavigate('playlist-view', id)}
             onAddToPlaylist={handleAddToPlaylist}
           />
         );
@@ -242,6 +310,25 @@ const AppContent: React.FC = () => {
         );
 
       case 'playlists':
+      case 'my-playlists':
+        if (isOwner) {
+          return (
+            <OwnerDashboard
+              initialSection="playlists"
+              songs={songs}
+              playlists={playlists}
+              onOpenUploadModal={() => setIsUploadModalOpen(true)}
+              onOpenCreatePlaylist={() => {
+                setPlaylistToEdit(null);
+                setIsCreatePlaylistOpen(true);
+              }}
+              onOpenInviteModal={() => setIsInviteModalOpen(true)}
+              onRefreshData={loadContent}
+              onNavigatePlaylist={(id) => handleNavigate('playlist-view', id)}
+              onAddToPlaylist={handleAddToPlaylist}
+            />
+          );
+        }
         return (
           <div className="p-6 sm:p-8 space-y-6 max-w-7xl mx-auto pb-32">
             <div className="flex items-center justify-between pb-2 border-b border-white/[0.04]">
@@ -249,17 +336,6 @@ const AppContent: React.FC = () => {
                 <h1 className="text-2xl font-extrabold text-white">Your Playlists</h1>
                 <p className="text-xs text-slate-400 mt-1">Curated audio collections</p>
               </div>
-              {isOwner && (
-                <button
-                  onClick={() => {
-                    setPlaylistToEdit(null);
-                    setIsCreatePlaylistOpen(true);
-                  }}
-                  className="px-4 py-2 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-500 rounded-xl transition-colors cursor-pointer"
-                >
-                  Create Playlist
-                </button>
-              )}
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               {playlists.map((pl) => (
@@ -286,9 +362,19 @@ const AppContent: React.FC = () => {
           );
         }
         return (
-          <FriendsPage
+          <OwnerDashboard
+            initialSection="friends"
+            songs={songs}
             playlists={playlists}
-            onOpenInvite={() => setIsInviteModalOpen(true)}
+            onOpenUploadModal={() => setIsUploadModalOpen(true)}
+            onOpenCreatePlaylist={() => {
+              setPlaylistToEdit(null);
+              setIsCreatePlaylistOpen(true);
+            }}
+            onOpenInviteModal={() => setIsInviteModalOpen(true)}
+            onRefreshData={loadContent}
+            onNavigatePlaylist={(id) => handleNavigate('playlist-view', id)}
+            onAddToPlaylist={handleAddToPlaylist}
           />
         );
 
@@ -302,7 +388,24 @@ const AppContent: React.FC = () => {
         );
 
       case 'settings':
-        return <SettingsPage />;
+        return isOwner ? (
+          <OwnerDashboard
+            initialSection="settings"
+            songs={songs}
+            playlists={playlists}
+            onOpenUploadModal={() => setIsUploadModalOpen(true)}
+            onOpenCreatePlaylist={() => {
+              setPlaylistToEdit(null);
+              setIsCreatePlaylistOpen(true);
+            }}
+            onOpenInviteModal={() => setIsInviteModalOpen(true)}
+            onRefreshData={loadContent}
+            onNavigatePlaylist={(id) => handleNavigate('playlist-view', id)}
+            onAddToPlaylist={handleAddToPlaylist}
+          />
+        ) : (
+          <SettingsPage />
+        );
 
       default:
         return (
@@ -388,7 +491,7 @@ const AppContent: React.FC = () => {
         onSuccess={async (authedUser) => {
           setIsAuthModalOpen(false);
           await loadContent(authedUser);
-          setCurrentTab('home');
+          setCurrentTab(authedUser.role === 'owner' ? 'dashboard' : 'home');
           showToast(`Welcome back, ${authedUser.displayName}!`, 'success');
         }}
       />

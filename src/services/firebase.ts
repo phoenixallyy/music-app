@@ -56,6 +56,8 @@ export function getMissingFirebaseConfigDetails(): string[] {
   return missing;
 }
 
+export const getMissingFirebaseConfig = getMissingFirebaseConfigDetails;
+
 export function initFirebase(): { app: FirebaseApp | null; auth: Auth | null; db: Firestore | null } {
   if (app && auth) return { app, auth, db };
 

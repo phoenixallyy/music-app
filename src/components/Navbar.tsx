@@ -131,12 +131,20 @@ export const Navbar: React.FC<NavbarProps> = ({
             {isOwner && (
               <>
                 <button
-                  onClick={() => onNavigate('library')}
+                  onClick={() => onNavigate('dashboard')}
                   className={`hover:text-white transition-colors whitespace-nowrap shrink-0 pb-0.5 ${
-                    currentTab === 'library' ? 'text-white border-b-2 border-purple-500 font-semibold' : ''
+                    currentTab === 'dashboard' ? 'text-white border-b-2 border-purple-500 font-semibold' : ''
                   }`}
                 >
-                  Music Library
+                  Owner Dashboard
+                </button>
+                <button
+                  onClick={() => onNavigate('library')}
+                  className={`hover:text-white transition-colors whitespace-nowrap shrink-0 pb-0.5 ${
+                    currentTab === 'library' || currentTab === 'my-music' ? 'text-white border-b-2 border-purple-500 font-semibold' : ''
+                  }`}
+                >
+                  My Music
                 </button>
                 <button
                   onClick={() => onNavigate('friends')}
