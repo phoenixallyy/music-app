@@ -5,8 +5,9 @@ const SECRET_KEY = process.env.JWT_SECRET || 'vibevault_secure_signature_key_202
 export interface TokenPayload {
   userId: string;
   email: string;
-  role: 'owner' | 'friend';
+  role: 'owner' | 'friend' | 'demo';
   displayName: string;
+  isDemo?: boolean;
   exp: number; // timestamp in seconds
 }
 

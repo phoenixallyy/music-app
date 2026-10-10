@@ -21,6 +21,7 @@ interface LandingPageProps {
   onStartListening: () => void;
   onExplore: () => void;
   onQuickOwnerDemo?: () => void;
+  isDemoLoading?: boolean;
   recentSongs: Song[];
   featuredPlaylists: Playlist[];
   onOpenPlaylist: (id: string) => void;
@@ -30,6 +31,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onStartListening,
   onExplore,
   onQuickOwnerDemo,
+  isDemoLoading = false,
   recentSongs,
   featuredPlaylists,
   onOpenPlaylist,
@@ -66,7 +68,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
               <button
                 onClick={onStartListening}
-                className="w-full sm:w-auto px-7 py-3.5 rounded-xl font-bold text-sm text-white bg-purple-600 hover:bg-purple-500 shadow-xl shadow-purple-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-7 py-3.5 rounded-xl font-bold text-sm text-white bg-purple-600 hover:bg-purple-500 shadow-xl shadow-purple-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>Start Listening</span>
                 <ChevronRight className="w-4 h-4" />
@@ -75,9 +77,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               {onQuickOwnerDemo && (
                 <button
                   onClick={onQuickOwnerDemo}
-                  className="w-full sm:w-auto px-5 py-3.5 rounded-xl font-bold text-sm text-purple-200 bg-purple-900/40 hover:bg-purple-800/50 border border-purple-500/40 shadow-lg shadow-purple-950/40 transition-colors flex items-center justify-center gap-2"
+                  disabled={isDemoLoading}
+                  className="w-full sm:w-auto px-5 py-3.5 rounded-xl font-bold text-sm text-purple-200 bg-purple-900/40 hover:bg-purple-800/50 border border-purple-500/40 shadow-lg shadow-purple-950/40 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
                 >
-                  <span>1-Click Owner Demo</span>
+                  {isDemoLoading ? (
+                    <>
+                      <Disc3 className="w-4 h-4 animate-spin text-purple-400" />
+                      <span>Opening Owner Vault...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Disc3 className="w-4 h-4 text-purple-400" />
+                      <span>1-Click Owner Demo</span>
+                    </>
+                  )}
                 </button>
               )}
 

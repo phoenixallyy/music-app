@@ -7,8 +7,9 @@ export interface User {
   email: string;
   passwordHash: string;
   displayName: string;
-  role: 'owner' | 'friend';
+  role: 'owner' | 'friend' | 'demo';
   avatarUrl: string;
+  isDemo?: boolean;
   createdAt: string;
 }
 

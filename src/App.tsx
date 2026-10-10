@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { PlayerProvider } from './context/PlayerContext';
-import { api } from './services/api';
-import { Song, Playlist } from './types';
+import { api, getStoredToken } from './services/api';
+import { Song, Playlist, User } from './types';
 
 // Layout & Components
 import { Navbar } from './components/Navbar';
@@ -22,6 +22,7 @@ import { FriendsPage } from './pages/FriendsPage';
 import { LikedSongsPage } from './pages/LikedSongsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { AuthModal } from './pages/AuthModal';
+import { CheckCircle2, AlertCircle, Info, Sparkles } from 'lucide-react';
 
 const AppContent: React.FC = () => {
   const { user, isOwner, isLoading: isAuthLoading, loginQuickOwner } = useAuth();
@@ -32,6 +33,10 @@ const AppContent: React.FC = () => {
   const [songs, setSongs] = useState<Song[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [isDataLoading, setIsDataLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
+
+  // User notifications toast
+  const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
 
   // Modals
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -42,6 +47,13 @@ const AppContent: React.FC = () => {
   const [isCreatePlaylistOpen, setIsCreatePlaylistOpen] = useState(false);
   const [playlistToEdit, setPlaylistToEdit] = useState<Playlist | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setToast({ type, message });
+    setTimeout(() => {
+      setToast(null);
+    }, 4500);
+  };
 
   // Parse invite tokens or hashes on load
   useEffect(() => {
@@ -54,28 +66,32 @@ const AppContent: React.FC = () => {
     }
   }, []);
 
-  // When user signs in, switch default tab to 'home'
+  // When user signs in, switch default tab to 'home' safely without flickering
   useEffect(() => {
     if (user && currentTab === 'landing') {
       setCurrentTab('home');
-    } else if (!user && currentTab !== 'landing' && currentTab !== 'explore') {
+    } else if (!user && !isAuthLoading && !getStoredToken() && currentTab !== 'landing' && currentTab !== 'explore') {
       setCurrentTab('landing');
     }
-  }, [user]);
+  }, [user, isAuthLoading, currentTab]);
 
-  // Load songs & playlists
-  const loadContent = async () => {
-    if (!user) {
+  // Load songs & playlists with optional user override to bypass stale closures
+  const loadContent = async (overrideUser?: User | null) => {
+    const activeUser = overrideUser !== undefined ? overrideUser : user;
+    const token = getStoredToken();
+    const isAuthed = Boolean(activeUser || token);
+
+    if (!isAuthed) {
       // Guest preview mode: fetch public tracks and playlists
       try {
         const [songsRes, plRes] = await Promise.all([
           api.getSongs().catch(() => ({ songs: [] })),
           api.getPlaylists().catch(() => ({ playlists: [] })),
         ]);
-        setSongs(songsRes.songs);
-        setPlaylists(plRes.playlists);
-      } catch {
-        // Fallback
+        setSongs(songsRes.songs || []);
+        setPlaylists(plRes.playlists || []);
+      } catch (err) {
+        console.warn('Guest data load notice:', err);
       }
       return;
     }
@@ -86,10 +102,10 @@ const AppContent: React.FC = () => {
         api.getSongs(),
         api.getPlaylists(),
       ]);
-      setSongs(songsRes.songs);
-      setPlaylists(plRes.playlists);
+      setSongs(songsRes.songs || []);
+      setPlaylists(plRes.playlists || []);
     } catch (err) {
-      console.warn('Failed to fetch data:', err);
+      console.warn('Authenticated content load notice:', err);
     } finally {
       setIsDataLoading(false);
     }
@@ -109,12 +125,18 @@ const AppContent: React.FC = () => {
   };
 
   const handleQuickOwnerDemo = async () => {
+    setDemoLoading(true);
     try {
-      await loginQuickOwner();
-      await loadContent();
+      const authedUser = await loginQuickOwner();
+      await loadContent(authedUser);
       setCurrentTab('home');
+      showToast('Logged in as Demo Owner! Administrator dashboard unlocked.', 'success');
     } catch (err) {
       console.error('Owner demo error:', err);
+      const msg = err instanceof Error ? err.message : 'Could not launch Owner Demo.';
+      showToast(msg, 'error');
+    } finally {
+      setDemoLoading(false);
     }
   };
 
@@ -127,9 +149,9 @@ const AppContent: React.FC = () => {
     try {
       await api.addTrackToPlaylist(playlistId, songId);
       await loadContent();
-      alert('Track added to playlist!');
+      showToast('Track added to playlist!', 'success');
     } catch (err) {
-      alert(`Could not add track: ${err instanceof Error ? err.message : String(err)}`);
+      showToast(`Could not add track: ${err instanceof Error ? err.message : String(err)}`, 'error');
     }
   };
 
@@ -153,6 +175,7 @@ const AppContent: React.FC = () => {
             }}
             onExplore={() => setCurrentTab('explore')}
             onQuickOwnerDemo={handleQuickOwnerDemo}
+            isDemoLoading={demoLoading}
             recentSongs={songs}
             featuredPlaylists={playlists}
             onOpenPlaylist={(id) => handleNavigate('playlist-view', id)}
@@ -232,7 +255,7 @@ const AppContent: React.FC = () => {
                     setPlaylistToEdit(null);
                     setIsCreatePlaylistOpen(true);
                   }}
-                  className="px-4 py-2 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-500 rounded-xl transition-colors"
+                  className="px-4 py-2 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-500 rounded-xl transition-colors cursor-pointer"
                 >
                   Create Playlist
                 </button>
@@ -243,10 +266,10 @@ const AppContent: React.FC = () => {
                 <div
                   key={pl.id}
                   onClick={() => handleNavigate('playlist-view', pl.id)}
-                  className="cursor-pointer"
+                  className="cursor-pointer group"
                 >
-                  <img src={pl.artworkUrl} alt={pl.name} className="w-full aspect-square rounded-xl object-cover mb-2" />
-                  <p className="text-sm font-bold text-white truncate">{pl.name}</p>
+                  <img src={pl.artworkUrl} alt={pl.name} className="w-full aspect-square rounded-xl object-cover mb-2 border border-white/5 group-hover:border-purple-500/30 transition-colors" />
+                  <p className="text-sm font-bold text-white truncate group-hover:text-purple-300 transition-colors">{pl.name}</p>
                   <p className="text-xs text-slate-400 truncate">{pl.trackIds.length} tracks</p>
                 </div>
               ))}
@@ -282,24 +305,52 @@ const AppContent: React.FC = () => {
         return <SettingsPage />;
 
       default:
-        return <LandingPage
-          onStartListening={() => handleOpenAuth('login')}
-          onExplore={() => setCurrentTab('explore')}
-          recentSongs={songs}
-          featuredPlaylists={playlists}
-          onOpenPlaylist={(id) => handleNavigate('playlist-view', id)}
-        />;
+        return (
+          <LandingPage
+            onStartListening={() => {
+              if (user) setCurrentTab('home');
+              else handleOpenAuth('login');
+            }}
+            onExplore={() => setCurrentTab('explore')}
+            onQuickOwnerDemo={handleQuickOwnerDemo}
+            isDemoLoading={demoLoading}
+            recentSongs={songs}
+            featuredPlaylists={playlists}
+            onOpenPlaylist={(id) => handleNavigate('playlist-view', id)}
+          />
+        );
     }
   };
 
   return (
-    <div className="h-screen bg-[#0a0a0f] text-slate-100 flex flex-col antialiased selection:bg-purple-600 selection:text-white overflow-hidden">
+    <div className="h-screen bg-[#0a0a0f] text-slate-100 flex flex-col antialiased selection:bg-purple-600 selection:text-white overflow-hidden relative">
+      {/* Toast Feedback */}
+      {toast && (
+        <div className="fixed top-16 right-6 z-50 animate-in slide-in-from-top duration-200">
+          <div
+            className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl shadow-2xl border text-xs font-medium backdrop-blur-md ${
+              toast.type === 'success'
+                ? 'bg-emerald-950/90 text-emerald-200 border-emerald-500/30 shadow-emerald-950/40'
+                : toast.type === 'error'
+                ? 'bg-rose-950/90 text-rose-200 border-rose-500/30 shadow-rose-950/40'
+                : 'bg-purple-950/90 text-purple-200 border-purple-500/30 shadow-purple-950/40'
+            }`}
+          >
+            {toast.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
+            {toast.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />}
+            {toast.type === 'info' && <Info className="w-4 h-4 text-purple-400 shrink-0" />}
+            <span>{toast.message}</span>
+          </div>
+        </div>
+      )}
+
       {/* Top Navbar */}
       <Navbar
         currentTab={currentTab}
         onNavigate={handleNavigate}
         onOpenAuth={handleOpenAuth}
         onQuickOwnerDemo={handleQuickOwnerDemo}
+        isDemoLoading={demoLoading}
       />
 
       {/* Main Layout Container */}
@@ -334,10 +385,11 @@ const AppContent: React.FC = () => {
         initialMode={authMode}
         inviteToken={inviteTokenParam}
         onClose={() => setIsAuthModalOpen(false)}
-        onSuccess={async () => {
+        onSuccess={async (authedUser) => {
           setIsAuthModalOpen(false);
-          await loadContent();
+          await loadContent(authedUser);
           setCurrentTab('home');
+          showToast(`Welcome back, ${authedUser.displayName}!`, 'success');
         }}
       />
 
@@ -346,6 +398,7 @@ const AppContent: React.FC = () => {
         onClose={() => setIsUploadModalOpen(false)}
         onUploaded={() => {
           loadContent();
+          showToast('Track uploaded successfully!', 'success');
         }}
       />
 
@@ -358,6 +411,7 @@ const AppContent: React.FC = () => {
         }}
         onCreated={() => {
           loadContent();
+          showToast('Playlist saved!', 'success');
         }}
       />
 
@@ -367,6 +421,7 @@ const AppContent: React.FC = () => {
         onClose={() => setIsInviteModalOpen(false)}
         onInviteCreated={() => {
           loadContent();
+          showToast('Invite link generated!', 'success');
         }}
       />
     </div>

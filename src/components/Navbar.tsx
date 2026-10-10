@@ -7,15 +7,24 @@ interface NavbarProps {
   onNavigate: (tab: string) => void;
   onOpenAuth: (mode?: 'login' | 'register') => void;
   onQuickOwnerDemo?: () => Promise<void>;
+  isDemoLoading?: boolean;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ currentTab, onNavigate, onOpenAuth, onQuickOwnerDemo }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  currentTab,
+  onNavigate,
+  onOpenAuth,
+  onQuickOwnerDemo,
+  isDemoLoading: externalDemoLoading,
+}) => {
   const { user, logout, isOwner, loginQuickOwner } = useAuth();
   const [menuOpen, setMenuOpen] = React.useState(false);
-  const [isDemoLoading, setIsDemoLoading] = React.useState(false);
+  const [internalDemoLoading, setInternalDemoLoading] = React.useState(false);
+
+  const isDemoLoading = externalDemoLoading !== undefined ? externalDemoLoading : internalDemoLoading;
 
   const handleDemoClick = async () => {
-    setIsDemoLoading(true);
+    setInternalDemoLoading(true);
     try {
       if (onQuickOwnerDemo) {
         await onQuickOwnerDemo();
@@ -25,8 +34,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onNavigate, onOpenAu
       }
     } catch (err) {
       console.error('Demo error:', err);
+      alert(`Could not sign in to Owner Demo: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
-      setIsDemoLoading(false);
+      setInternalDemoLoading(false);
     }
   };
 

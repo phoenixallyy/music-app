@@ -1,4 +1,4 @@
-export type UserRole = 'owner' | 'friend';
+export type UserRole = 'owner' | 'friend' | 'demo';
 
 export interface User {
   id: string;
@@ -6,6 +6,7 @@ export interface User {
   displayName: string;
   role: UserRole;
   avatarUrl?: string;
+  isDemo?: boolean;
   createdAt: string;
 }
 

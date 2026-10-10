@@ -21,8 +21,38 @@ export function setStoredToken(token: string): void {
   }
 }
 
+let memoryUser: User | null = null;
+
+export function getStoredUser(): User | null {
+  try {
+    const raw = localStorage.getItem('vibevault_user');
+    return raw ? JSON.parse(raw) : memoryUser;
+  } catch {
+    return memoryUser;
+  }
+}
+
+export function setStoredUser(user: User): void {
+  memoryUser = user;
+  try {
+    localStorage.setItem('vibevault_user', JSON.stringify(user));
+  } catch {
+    // In-memory fallback
+  }
+}
+
+export function clearStoredUser(): void {
+  memoryUser = null;
+  try {
+    localStorage.removeItem('vibevault_user');
+  } catch {
+    // Cleared
+  }
+}
+
 export function clearStoredToken(): void {
   memoryToken = null;
+  clearStoredUser();
   try {
     localStorage.removeItem('vibevault_token');
   } catch {
