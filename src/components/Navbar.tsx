@@ -1,16 +1,34 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Disc3, UserCircle, LogOut, Shield, Radio, KeyRound } from 'lucide-react';
+import { Disc3, UserCircle, LogOut, Shield, Radio, KeyRound, Loader2 } from 'lucide-react';
 
 interface NavbarProps {
   currentTab: string;
   onNavigate: (tab: string) => void;
   onOpenAuth: (mode?: 'login' | 'register') => void;
+  onQuickOwnerDemo?: () => Promise<void>;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ currentTab, onNavigate, onOpenAuth }) => {
+export const Navbar: React.FC<NavbarProps> = ({ currentTab, onNavigate, onOpenAuth, onQuickOwnerDemo }) => {
   const { user, logout, isOwner, loginQuickOwner } = useAuth();
   const [menuOpen, setMenuOpen] = React.useState(false);
+  const [isDemoLoading, setIsDemoLoading] = React.useState(false);
+
+  const handleDemoClick = async () => {
+    setIsDemoLoading(true);
+    try {
+      if (onQuickOwnerDemo) {
+        await onQuickOwnerDemo();
+      } else {
+        await loginQuickOwner();
+        onNavigate('home');
+      }
+    } catch (err) {
+      console.error('Demo error:', err);
+    } finally {
+      setIsDemoLoading(false);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40 flex items-center justify-between gap-8 px-6 py-3.5 bg-[#0e0e16]/80 backdrop-blur-md border-b border-white/[0.06]">
@@ -141,11 +159,12 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onNavigate, onOpenAu
               Get Started
             </button>
             <button
-              onClick={() => loginQuickOwner()}
+              onClick={handleDemoClick}
+              disabled={isDemoLoading}
               title="Quick demo access as Administrator"
-              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-purple-300 bg-purple-950/60 border border-purple-700/40 rounded-lg hover:bg-purple-900/60 transition-colors whitespace-nowrap shrink-0"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-200 bg-purple-900/40 border border-purple-500/40 rounded-lg hover:bg-purple-800/50 transition-colors whitespace-nowrap shrink-0 disabled:opacity-50"
             >
-              <KeyRound className="w-3.5 h-3.5" />
+              {isDemoLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5 text-purple-400" />}
               <span>Owner Demo</span>
             </button>
           </div>

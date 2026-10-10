@@ -24,7 +24,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { AuthModal } from './pages/AuthModal';
 
 const AppContent: React.FC = () => {
-  const { user, isOwner, isLoading: isAuthLoading } = useAuth();
+  const { user, isOwner, isLoading: isAuthLoading, loginQuickOwner } = useAuth();
 
   const [currentTab, setCurrentTab] = useState<string>('landing');
   const [activePlaylistId, setActivePlaylistId] = useState<string>('');
@@ -108,6 +108,16 @@ const AppContent: React.FC = () => {
     }
   };
 
+  const handleQuickOwnerDemo = async () => {
+    try {
+      await loginQuickOwner();
+      await loadContent();
+      setCurrentTab('home');
+    } catch (err) {
+      console.error('Owner demo error:', err);
+    }
+  };
+
   const handleOpenAuth = (mode: 'login' | 'register' = 'login') => {
     setAuthMode(mode);
     setIsAuthModalOpen(true);
@@ -125,7 +135,7 @@ const AppContent: React.FC = () => {
 
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center text-xs text-purple-400 font-mono">
+      <div className="h-screen bg-[#0a0a0f] flex items-center justify-center text-xs text-purple-400 font-mono">
         INITIALIZING VAULT ENVIRONMENT...
       </div>
     );
@@ -142,6 +152,7 @@ const AppContent: React.FC = () => {
               else handleOpenAuth('login');
             }}
             onExplore={() => setCurrentTab('explore')}
+            onQuickOwnerDemo={handleQuickOwnerDemo}
             recentSongs={songs}
             featuredPlaylists={playlists}
             onOpenPlaylist={(id) => handleNavigate('playlist-view', id)}
@@ -282,12 +293,13 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-slate-100 flex flex-col antialiased selection:bg-purple-600 selection:text-white">
+    <div className="h-screen bg-[#0a0a0f] text-slate-100 flex flex-col antialiased selection:bg-purple-600 selection:text-white overflow-hidden">
       {/* Top Navbar */}
       <Navbar
         currentTab={currentTab}
         onNavigate={handleNavigate}
         onOpenAuth={handleOpenAuth}
+        onQuickOwnerDemo={handleQuickOwnerDemo}
       />
 
       {/* Main Layout Container */}
@@ -322,9 +334,9 @@ const AppContent: React.FC = () => {
         initialMode={authMode}
         inviteToken={inviteTokenParam}
         onClose={() => setIsAuthModalOpen(false)}
-        onSuccess={() => {
+        onSuccess={async () => {
           setIsAuthModalOpen(false);
-          loadContent();
+          await loadContent();
           setCurrentTab('home');
         }}
       />

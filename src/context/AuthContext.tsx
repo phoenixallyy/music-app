@@ -82,7 +82,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loginQuickOwner = async () => {
-    await login('owner@vibevault.io', 'owner1234');
+    setError(null);
+    try {
+      const data = await api.loginDemoOwner();
+      setStoredToken(data.token);
+      setUser(data.user);
+    } catch (err: unknown) {
+      // Fallback
+      await login('owner@vibevault.io', 'owner1234');
+    }
   };
 
   const isOwner = user?.role === 'owner';

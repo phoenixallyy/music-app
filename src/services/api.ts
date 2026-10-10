@@ -2,16 +2,32 @@ import { User, Song, Playlist, Invitation, FriendUser } from '../types';
 
 const API_BASE = '/api';
 
+let memoryToken: string | null = null;
+
 export function getStoredToken(): string | null {
-  return localStorage.getItem('vibevault_token');
+  try {
+    return localStorage.getItem('vibevault_token') || memoryToken;
+  } catch {
+    return memoryToken;
+  }
 }
 
 export function setStoredToken(token: string): void {
-  localStorage.setItem('vibevault_token', token);
+  memoryToken = token;
+  try {
+    localStorage.setItem('vibevault_token', token);
+  } catch {
+    // In-memory fallback retained
+  }
 }
 
 export function clearStoredToken(): void {
-  localStorage.removeItem('vibevault_token');
+  memoryToken = null;
+  try {
+    localStorage.removeItem('vibevault_token');
+  } catch {
+    // In-memory cleared
+  }
 }
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -53,6 +69,12 @@ export const api = {
     return request<{ user: User; token: string }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  },
+
+  async loginDemoOwner() {
+    return request<{ user: User; token: string }>('/auth/demo-owner', {
+      method: 'POST',
     });
   },
 

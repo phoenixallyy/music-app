@@ -20,6 +20,7 @@ import {
 interface LandingPageProps {
   onStartListening: () => void;
   onExplore: () => void;
+  onQuickOwnerDemo?: () => void;
   recentSongs: Song[];
   featuredPlaylists: Playlist[];
   onOpenPlaylist: (id: string) => void;
@@ -28,6 +29,7 @@ interface LandingPageProps {
 export const LandingPage: React.FC<LandingPageProps> = ({
   onStartListening,
   onExplore,
+  onQuickOwnerDemo,
   recentSongs,
   featuredPlaylists,
   onOpenPlaylist,
@@ -35,7 +37,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const { currentSong, isPlaying, playSong, togglePlay } = usePlayer();
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-slate-100 flex flex-col">
+    <div className="bg-[#0a0a0f] text-slate-100 flex flex-col">
       {/* HERO SECTION */}
       <section className="relative pt-12 pb-20 md:pt-20 md:pb-28 px-6 overflow-hidden">
         {/* Ambient violet background glow */}
@@ -61,7 +63,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               Host your lossless audio library in private storage. Curate custom playlists and stream exclusively with invited friends through a lightning-fast, protected music player.
             </p>
 
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
               <button
                 onClick={onStartListening}
                 className="w-full sm:w-auto px-7 py-3.5 rounded-xl font-bold text-sm text-white bg-purple-600 hover:bg-purple-500 shadow-xl shadow-purple-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
@@ -70,11 +72,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <ChevronRight className="w-4 h-4" />
               </button>
 
+              {onQuickOwnerDemo && (
+                <button
+                  onClick={onQuickOwnerDemo}
+                  className="w-full sm:w-auto px-5 py-3.5 rounded-xl font-bold text-sm text-purple-200 bg-purple-900/40 hover:bg-purple-800/50 border border-purple-500/40 shadow-lg shadow-purple-950/40 transition-colors flex items-center justify-center gap-2"
+                >
+                  <span>1-Click Owner Demo</span>
+                </button>
+              )}
+
               <button
                 onClick={onExplore}
-                className="w-full sm:w-auto px-6 py-3.5 rounded-xl font-semibold text-sm text-slate-300 hover:text-white bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 transition-colors flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-5 py-3.5 rounded-xl font-semibold text-sm text-slate-300 hover:text-white bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 transition-colors flex items-center justify-center gap-2"
               >
-                <span>Explore the Experience</span>
+                <span>Explore Music</span>
               </button>
             </div>
 
