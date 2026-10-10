@@ -1,0 +1,6 @@
+{
+  "name": "VibeVault",
+  "description": "Private, secure music streaming platform for personal libraries and playlist sharing with authorized listeners.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
