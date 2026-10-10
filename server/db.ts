@@ -82,35 +82,70 @@ export interface DatabaseSchema {
   };
 }
 
-const DATA_DIR = path.resolve(process.cwd(), 'data');
-const DB_FILE = path.join(DATA_DIR, 'db.json');
+const DEFAULT_DATA_DIR = path.resolve(process.cwd(), 'data');
+const DEFAULT_DB_FILE = path.join(DEFAULT_DATA_DIR, 'db.json');
+const TMP_DATA_DIR = path.resolve('/tmp', 'vibevault');
+const TMP_DB_FILE = path.join(TMP_DATA_DIR, 'db.json');
 
 export class Database {
   private data: DatabaseSchema;
 
   constructor() {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
+    try {
+      if (!fs.existsSync(DEFAULT_DATA_DIR)) {
+        fs.mkdirSync(DEFAULT_DATA_DIR, { recursive: true });
+      }
+    } catch {
+      // Read-only filesystem, will use /tmp or memory
     }
     this.data = this.load();
   }
 
   private load(): DatabaseSchema {
-    if (fs.existsSync(DB_FILE)) {
+    // 1. Check if newer data was written to /tmp in serverless environment
+    if (fs.existsSync(TMP_DB_FILE)) {
       try {
-        const content = fs.readFileSync(DB_FILE, 'utf-8');
+        const content = fs.readFileSync(TMP_DB_FILE, 'utf-8');
         return JSON.parse(content);
       } catch (err) {
-        console.error('Error reading db.json, reinitializing:', err);
+        console.warn('Notice reading tmp db.json, checking default:', err);
       }
     }
+
+    // 2. Check default bundled db.json
+    if (fs.existsSync(DEFAULT_DB_FILE)) {
+      try {
+        const content = fs.readFileSync(DEFAULT_DB_FILE, 'utf-8');
+        return JSON.parse(content);
+      } catch (err) {
+        console.error('Error reading default db.json, reinitializing:', err);
+      }
+    }
+
     const initialData = this.getInitialSeed();
     this.saveData(initialData);
     return initialData;
   }
 
   private saveData(data: DatabaseSchema): void {
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
+    // Attempt writing to standard location first
+    try {
+      if (!fs.existsSync(DEFAULT_DATA_DIR)) {
+        fs.mkdirSync(DEFAULT_DATA_DIR, { recursive: true });
+      }
+      fs.writeFileSync(DEFAULT_DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
+      return;
+    } catch {
+      // Read-only filesystem (e.g. Vercel Serverless / Lambda) -> Persist to /tmp
+      try {
+        if (!fs.existsSync(TMP_DATA_DIR)) {
+          fs.mkdirSync(TMP_DATA_DIR, { recursive: true });
+        }
+        fs.writeFileSync(TMP_DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
+      } catch (err2) {
+        console.warn('[VibeVault DB] Persistence operating in-memory:', err2);
+      }
+    }
   }
 
   public save(): void {

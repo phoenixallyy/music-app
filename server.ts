@@ -1,27 +1,10 @@
-import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
-import apiRouter from './server/routes.js';
-import { ensureSeedAudioFiles } from './server/audioGenerator.js';
+import { createExpressApp } from './server/app.js';
 
 async function startServer() {
-  const app = express();
+  const app = createExpressApp();
   const PORT = 3000;
-
-  // Initialize seed audio files so playback works immediately
-  const audioDir = path.resolve(process.cwd(), 'data', 'audio');
-  ensureSeedAudioFiles(audioDir);
-
-  // Parse JSON and form bodies
-  app.use(express.json({ limit: '10mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-  // Serve uploaded artwork files
-  const artworkDir = path.resolve(process.cwd(), 'data', 'artwork');
-  app.use('/data/artwork', express.static(artworkDir));
-
-  // Mount API endpoints
-  app.use('/api', apiRouter);
 
   // In production, serve the built static client
   // In development, hook Vite's dev server middleware

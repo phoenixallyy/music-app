@@ -7,16 +7,63 @@ import { hashPassword, verifyPassword, createToken, verifyToken, generateRandomT
 
 const router = express.Router();
 
-const AUDIO_DIR = path.resolve(process.cwd(), 'data', 'audio');
-const ARTWORK_DIR = path.resolve(process.cwd(), 'data', 'artwork');
+const DEFAULT_AUDIO_DIR = path.resolve(process.cwd(), 'data', 'audio');
+const DEFAULT_ARTWORK_DIR = path.resolve(process.cwd(), 'data', 'artwork');
+const TMP_AUDIO_DIR = path.resolve('/tmp', 'vibevault', 'audio');
+const TMP_ARTWORK_DIR = path.resolve('/tmp', 'vibevault', 'artwork');
 
-if (!fs.existsSync(AUDIO_DIR)) fs.mkdirSync(AUDIO_DIR, { recursive: true });
-if (!fs.existsSync(ARTWORK_DIR)) fs.mkdirSync(ARTWORK_DIR, { recursive: true });
+export function getWritableAudioDir(): string {
+  try {
+    if (!fs.existsSync(DEFAULT_AUDIO_DIR)) fs.mkdirSync(DEFAULT_AUDIO_DIR, { recursive: true });
+    return DEFAULT_AUDIO_DIR;
+  } catch {
+    try {
+      if (!fs.existsSync(TMP_AUDIO_DIR)) fs.mkdirSync(TMP_AUDIO_DIR, { recursive: true });
+      return TMP_AUDIO_DIR;
+    } catch {
+      return DEFAULT_AUDIO_DIR;
+    }
+  }
+}
+
+export function getWritableArtworkDir(): string {
+  try {
+    if (!fs.existsSync(DEFAULT_ARTWORK_DIR)) fs.mkdirSync(DEFAULT_ARTWORK_DIR, { recursive: true });
+    return DEFAULT_ARTWORK_DIR;
+  } catch {
+    try {
+      if (!fs.existsSync(TMP_ARTWORK_DIR)) fs.mkdirSync(TMP_ARTWORK_DIR, { recursive: true });
+      return TMP_ARTWORK_DIR;
+    } catch {
+      return DEFAULT_ARTWORK_DIR;
+    }
+  }
+}
+
+export function findAudioFilePath(filename: string): string | null {
+  const c1 = path.join(getWritableAudioDir(), filename);
+  if (fs.existsSync(c1)) return c1;
+  const c2 = path.join(DEFAULT_AUDIO_DIR, filename);
+  if (fs.existsSync(c2)) return c2;
+  const c3 = path.join(TMP_AUDIO_DIR, filename);
+  if (fs.existsSync(c3)) return c3;
+  return null;
+}
+
+export function findArtworkFilePath(filename: string): string | null {
+  const c1 = path.join(getWritableArtworkDir(), filename);
+  if (fs.existsSync(c1)) return c1;
+  const c2 = path.join(DEFAULT_ARTWORK_DIR, filename);
+  if (fs.existsSync(c2)) return c2;
+  const c3 = path.join(TMP_ARTWORK_DIR, filename);
+  if (fs.existsSync(c3)) return c3;
+  return null;
+}
 
 // Multer storage for audio uploads
 const audioStorage = multer.diskStorage({
   destination: (_req, _file, cb) => {
-    cb(null, AUDIO_DIR);
+    cb(null, getWritableAudioDir());
   },
   filename: (_req, file, cb) => {
     const uniqueSuffix = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
@@ -44,7 +91,7 @@ const upload = multer({
 // Multer storage for cover artwork images
 const artworkStorage = multer.diskStorage({
   destination: (_req, _file, cb) => {
-    cb(null, ARTWORK_DIR);
+    cb(null, getWritableArtworkDir());
   },
   filename: (_req, file, cb) => {
     const uniqueSuffix = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
@@ -461,8 +508,17 @@ router.post('/artwork/upload', authenticate, requireOwner, uploadArtwork.single(
 
 // Retrieve custom cover artwork
 router.get('/artwork/:filename', (req: Request, res: Response) => {
-  const filePath = path.join(ARTWORK_DIR, req.params.filename);
-  if (!fs.existsSync(filePath)) {
+  const filePath = findArtworkFilePath(req.params.filename);
+  if (!filePath) {
+    return res.status(404).json({ error: 'Cover artwork not found.' });
+  }
+  res.sendFile(filePath);
+});
+
+// Dedicated artwork endpoint for Vercel static rewrites
+router.get('/artwork-file/:filename', (req: Request, res: Response) => {
+  const filePath = findArtworkFilePath(req.params.filename);
+  if (!filePath) {
     return res.status(404).json({ error: 'Cover artwork not found.' });
   }
   res.sendFile(filePath);
@@ -496,8 +552,8 @@ router.delete('/songs/:id', authenticate, requireOwner, (req: AuthenticatedReque
   }
 
   // Remove audio file from disk
-  const filePath = path.join(AUDIO_DIR, song.audioFileName);
-  if (fs.existsSync(filePath)) {
+  const filePath = findAudioFilePath(song.audioFileName);
+  if (filePath && fs.existsSync(filePath)) {
     try {
       fs.unlinkSync(filePath);
     } catch (e) {
@@ -534,8 +590,8 @@ router.get('/stream/:songId', authenticate, (req: AuthenticatedRequest, res: Res
     }
   }
 
-  const filePath = path.join(AUDIO_DIR, song.audioFileName);
-  if (!fs.existsSync(filePath)) {
+  const filePath = findAudioFilePath(song.audioFileName);
+  if (!filePath) {
     return res.status(404).json({ error: 'Audio file not found on storage server.' });
   }
 

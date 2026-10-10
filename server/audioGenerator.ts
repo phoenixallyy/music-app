@@ -93,8 +93,13 @@ export function generateSyntheticWav(trackType: 'ambient' | 'synth' | 'chill', d
 }
 
 export function ensureSeedAudioFiles(audioDir: string) {
-  if (!fs.existsSync(audioDir)) {
-    fs.mkdirSync(audioDir, { recursive: true });
+  try {
+    if (!fs.existsSync(audioDir)) {
+      fs.mkdirSync(audioDir, { recursive: true });
+    }
+  } catch {
+    // Read-only filesystem (e.g. AWS Lambda / Vercel Serverless)
+    return;
   }
 
   const seedFiles = [
@@ -105,9 +110,13 @@ export function ensureSeedAudioFiles(audioDir: string) {
 
   for (const item of seedFiles) {
     const filePath = path.join(audioDir, item.name);
-    if (!fs.existsSync(filePath)) {
-      const wavBuffer = generateSyntheticWav(item.type, item.duration);
-      fs.writeFileSync(filePath, wavBuffer);
+    try {
+      if (!fs.existsSync(filePath)) {
+        const wavBuffer = generateSyntheticWav(item.type, item.duration);
+        fs.writeFileSync(filePath, wavBuffer);
+      }
+    } catch {
+      // Read-only filesystem
     }
   }
 }
